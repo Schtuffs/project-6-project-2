@@ -43,3 +43,4 @@
 # Other
 build/
 winbuild/
+.cache
