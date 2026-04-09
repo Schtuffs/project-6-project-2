@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(Sockets CXX)
+project(server CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(SRC ${CMAKE_CURRENT_LIST_DIR}/src)
@@ -7,11 +7,12 @@ set(SOCKET ${SRC}/sockets)
 set(INCLUDE ${CMAKE_CURRENT_LIST_DIR}/include)
 set(LIB ${CMAKE_CURRENT_LIST_DIR}/lib)
   
-add_library(${PROJECT_NAME} SHARED
+add_executable(${PROJECT_NAME}
     ${SOCKET}/ClientSocket.cpp
     ${SOCKET}/Packet.cpp
     ${SOCKET}/ServerSocket.cpp
     ${SOCKET}/Socket.cpp
+    ${SRC}/main.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE})

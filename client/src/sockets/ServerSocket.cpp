@@ -130,6 +130,10 @@ bool ServerSocket::isRunning() {
     return m_isRunning;
 }
 
+bool ServerSocket::send(CLIENT& client, const Packet& packet) const noexcept {
+    return Socket::send(packet, client);
+}
+
 int ServerSocket::receive(SOCKET socket, int millis, int maxSize) {
     // Poll
     if (!Socket::poll(socket, millis)) {
@@ -137,7 +141,9 @@ int ServerSocket::receive(SOCKET socket, int millis, int maxSize) {
     }
     
     // Get packet
-    Packet p = Socket::_receive(socket, millis, maxSize);
+    CLIENT client;
+    client.socket = socket;
+    Packet p = Socket::_receive(client, millis, maxSize);
     if (!p.isValid()) {
         return -1;
     }
@@ -146,16 +152,17 @@ int ServerSocket::receive(SOCKET socket, int millis, int maxSize) {
     try {
         // TCP already on its own thread, handle the packet
         if (mType == CONNECTION_TYPE::TCP) {
-            m_packetLambda(p);
+            m_packetLambda(client, p);
         }
         // UDP on one thread, send to threadpool
         else if (mType == CONNECTION_TYPE::UDP) {
-            boost::asio::post(*m_packetPool, [&]() {
-                m_packetLambda(p);
+            boost::asio::post(*m_packetPool, [this, client, p]() {
+                m_packetLambda(client, p);
             });
         }
     } catch (...) {
         std::println("ERROR: uncaught exception in packet lambda.");
+        return -1;
     }
 
     return 1;
@@ -177,7 +184,7 @@ bool ServerSocket::check(int millis, int maxSize) {
 
 // ----- Update -----
 
-void ServerSocket::addReceive(std::function<void(Packet&)> function) {
+void ServerSocket::addReceive(std::function<void(CLIENT, Packet)> function) {
     m_packetLambda = function;
 }
 

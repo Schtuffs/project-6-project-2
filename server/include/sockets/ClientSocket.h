@@ -28,6 +28,9 @@ public:
      */
     ~ClientSocket();
 
+    bool send(const Packet& packet);
+    Packet receive(int millis = 0, int maxSize = MAX_BUF_SIZE);
+
 private:
     std::string mIp;
     sockaddr_in mSvrAddr;

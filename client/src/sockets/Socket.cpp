@@ -58,25 +58,19 @@ bool Socket::poll(SOCKET socket, int millis) {
     return (::POLL(fds, 1, millis) > 0);
 }
 
-Packet Socket::receive(int millis, int maxSize) {
-    return _receive(mSocket, millis, maxSize);
-}
-
-Packet Socket::_receive(SOCKET socket, int millis, int maxSize) {
+Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
     // Check if receive possible
-    if (!this->poll(socket, millis)) {
+    if (!this->poll(client.socket, millis)) {
         return Packet();
     }
     
     // Receive the head first
     if (mType == CONNECTION_TYPE::UDP) {
-#ifdef _WIN32
-        int length = sizeof(mUdpClient);
-#else
+        sockaddr_in udpClient;
         socklen_t length = sizeof(mUdpClient);
-#endif
+
         Packet::BUFFER* buf = new Packet::BUFFER[maxSize];
-        int received = ::recvfrom(socket, buf, maxSize, 0, (sockaddr*)&mUdpClient, &length);
+        int received = ::recvfrom(client.socket, buf, maxSize, 0, (sockaddr*)&udpClient, &length);
         if (received <= 0) {
             if (received < 0) {
                 std::println("ERROR: failed to receive from socket.");
@@ -84,6 +78,10 @@ Packet Socket::_receive(SOCKET socket, int millis, int maxSize) {
             delete[] buf;
             return Packet();
         }
+        // Save client information
+        client.ip = udpClient.sin_addr;
+        client.port = udpClient.sin_port;
+        
         Packet packet(buf, received);
         delete[] buf;
         return packet;
@@ -93,9 +91,10 @@ Packet Socket::_receive(SOCKET socket, int millis, int maxSize) {
         // Read size byte
         Packet::BUFFER* buf = new Packet::BUFFER[maxSize];
         uint64_t size = 0;
-        int received = ::recv(socket, buf, sizeof(size), 0);
+        int received = ::recv(client.socket, buf, sizeof(size), 0);
         if (received != (static_cast<int>(sizeof(size)))) {
             std::println("ERROR: failed to receive data from socket.");
+            delete[] buf;
             return Packet();
         }
         
@@ -106,7 +105,7 @@ Packet Socket::_receive(SOCKET socket, int millis, int maxSize) {
         uint64_t total = 0;
         Packet::BUFFER* data = new Packet::BUFFER[size];
         while (total != size) {
-            int received = ::recv(socket, buf, size - total, 0);
+            int received = ::recv(client.socket, buf, size - total, 0);
             if (received < 0) {
                 std::println("ERROR: Failed to receive data from socket");
                 delete[] data;
@@ -125,15 +124,7 @@ Packet Socket::_receive(SOCKET socket, int millis, int maxSize) {
     return Packet();
 }
 
-bool Socket::send(const Packet& data) const noexcept {
-    return this->send(data, DEFAULT_IP, mSocket);
-}
-
-bool Socket::send(const Packet& data, const std::string& ip) const noexcept {
-    return this->send(data, ip, mSocket);
-}
-
-bool Socket::send(const Packet& packet, const std::string& ip, SOCKET socket) const noexcept {
+bool Socket::send(const Packet& packet, CLIENT& client) const noexcept {
     if (mType == CONNECTION_TYPE::TCP) {
         // Prepare buffer sized
         uint64_t size = packet.size();
@@ -144,7 +135,7 @@ bool Socket::send(const Packet& packet, const std::string& ip, SOCKET socket) co
         std::memcpy(buffer + sizeof(size), packet.data(), packet.size());
 
         // Add lengths
-        int returnCode = ::send(socket, buffer, size + sizeof(size), 0);
+        int returnCode = ::send(client.socket, buffer, size + sizeof(size), 0);
         delete[] buffer;
         return returnCode != SOCKET_ERROR;
     }
@@ -155,10 +146,10 @@ bool Socket::send(const Packet& packet, const std::string& ip, SOCKET socket) co
         
         // Setup the address
         addr.sin_family = AF_INET;
-        addr.sin_port = htons(mPort);
-        addr.sin_addr.s_addr = inet_addr(ip.c_str());
-        
-        return (::sendto(socket, packet.data(), packet.size(), 0, (sockaddr*)&addr, addrLen) != SOCKET_ERROR);
+        addr.sin_port = client.port;
+        addr.sin_addr = client.ip;
+
+        return (::sendto(client.socket, packet.data(), packet.size(), 0, (sockaddr*)&addr, addrLen) != SOCKET_ERROR);
     }
     return false;
 }

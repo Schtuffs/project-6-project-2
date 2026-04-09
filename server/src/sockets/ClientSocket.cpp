@@ -10,12 +10,14 @@ ClientSocket::ClientSocket(CONNECTION_TYPE cType, const std::string& ip, uint16_
         return;
     }
 
+    // Prepare server info
+    mSvrAddr.sin_family = AF_INET;
+    mSvrAddr.sin_port = htons(mPort);
+    mSvrAddr.sin_addr.s_addr = inet_addr(ip.c_str());
+
     // Only TCP needs connect
     if (mType == CONNECTION_TYPE::TCP) {
         // Connect to server
-        mSvrAddr.sin_family = AF_INET;
-        mSvrAddr.sin_port = htons(mPort);
-        mSvrAddr.sin_addr.s_addr = inet_addr(ip.c_str());
         if (connect(mSocket, (sockaddr*)&mSvrAddr, sizeof(mSvrAddr)) != 0) {
             std::print("ERROR: Failed to connect client to server\n");
             mIsSetup = false;
@@ -28,5 +30,19 @@ ClientSocket::ClientSocket(CONNECTION_TYPE cType, const std::string& ip, uint16_
 
 ClientSocket::~ClientSocket() {
     // Nothing todo
+}
+
+bool ClientSocket::send(const Packet& packet) {
+    CLIENT server;
+    server.socket = mSocket;
+    server.ip = mSvrAddr.sin_addr;
+    server.port = htons(mPort);
+    return Socket::send(packet, server);
+}
+
+Packet ClientSocket::receive(int millis, int maxSize) {
+    CLIENT server;
+    server.socket = mSocket;
+    return Socket::_receive(server, millis, maxSize);
 }
 

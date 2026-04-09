@@ -7,6 +7,8 @@
 #include <boost/asio/thread_pool.hpp>
 #endif
 
+#include <sockets/CLIENT.h>
+#include <sockets/Packet.h>
 #include <sockets/Socket.h>
 
 /**
@@ -44,6 +46,16 @@ class ServerSocket : public Socket {
      */
     bool isRunning();
     
+    /**
+     * @brief Send data from server back to client.
+     * @param client The `CLIENT` to send to.
+     * @param packet The `Packet` to send.
+     * @return `true` on successful send, `false` on failure to send.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    bool send(CLIENT& client, const Packet& packet) const noexcept;
+    
     // ----- Update -----
     
     /**
@@ -51,7 +63,7 @@ class ServerSocket : public Socket {
      * @author Kyle Wagler
      * @date 2026-03-20
      */
-    void addReceive(std::function<void(Packet&)> function);
+    void addReceive(std::function<void(CLIENT, Packet)> function);
     
     /**
      * @brief Runs the server off the main thread and multithreads clients.
@@ -74,7 +86,7 @@ private:
 
     bool m_isRunning;
     std::thread m_serverThread;
-    std::function<void(Packet&)> m_packetLambda;
+    std::function<void(CLIENT, Packet)> m_packetLambda;
 #ifdef _SERVER_SOCKET_IMPL
     boost::asio::thread_pool* m_packetPool;
 #endif

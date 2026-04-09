@@ -1,24 +1,9 @@
 #pragma once
 
 #include <iostream>
-#ifdef _WIN32
-    #include <winsock2.h>
-    #define POLL WSAPoll
-    #define CLOSE closesocket
-#else
-    typedef int SOCKET;
-    constexpr int INVALID_SOCKET =  -1;
-    constexpr int SOCKET_ERROR =    -1;
-    #define CLOSE close
-    #include <unistd.h>
-    #include <poll.h>
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #define POLL poll
-#endif
 
-#include "Packet.h"
+#include <sockets/CLIENT.h>
+#include <sockets/Packet.h>
 
 enum class CONNECTION_TYPE  { TCP, UDP };
 constexpr const char* SOCKETS_VERSION   = "3.0.0";
@@ -59,25 +44,8 @@ class Socket {
      * @author Kyle Wagler
      * @date 2026-03-20
      */
-    Packet receive(int millis = 0, int maxSize = MAX_BUF_SIZE);
-    
-    /**
-     * @brief Sends a packet from own socket.
-     * @param data The packet to send.
-     * @return true on successful send.
-     * @author Kyle Wagler
-     * @date 2026-03-20
-     */
-    bool send(const Packet& data) const noexcept;
-    /**
-     * @brief Sends a packet from own socket.
-     * @param data The packet to send.
-     * @param ip The IP to send the packet to.
-     * @return true on successful send.
-     * @author Kyle Wagler
-     * @date 2026-03-20
-     */
-    bool send(const Packet& data, const std::string& ip) const noexcept;
+    // Packet receive(int millis = 0, int maxSize = MAX_BUF_SIZE);
+
     /**
      * @brief Sends a packet from specified socket.
      * @param data The packet to send.
@@ -87,7 +55,7 @@ class Socket {
      * @author Kyle Wagler
      * @date 2026-03-20
      */
-    bool send(const Packet& data, const std::string& ip, SOCKET socket) const noexcept;
+    bool send(const Packet& data, CLIENT& client) const noexcept;
 
     /**
      * @brief Check the type of the socket.
@@ -115,6 +83,6 @@ protected:
     // ----- Read -----
 
     // Max size only needed for UDP connections
-    Packet _receive(SOCKET socket, int millis = 0, int maxSize = MAX_BUF_SIZE);
+    Packet _receive(CLIENT& socket, int millis = 0, int maxSize = MAX_BUF_SIZE);
 };
 
