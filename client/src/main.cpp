@@ -1,11 +1,7 @@
 #include "DateTime.h"
-#include "sockets/ClientSocket.h"
-#include "sockets/Packet.h"
 #include "sockets/Sockets.h"
 #include <boost/algorithm/string/classification.hpp>
 #include <cstdint>
-#include <cstdlib>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <boost/algorithm/string.hpp>
@@ -27,7 +23,6 @@ int main(void) {
 
     ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP, "10.144.115.247");
     if (!clientSocket.isSetup()) {
-        std::cout << "Socket not setup unfortunately" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -38,18 +33,15 @@ int main(void) {
 
     Packet startupPacket = clientSocket.receive(200);
     if (!startupPacket.isValid()) {
-        std::cout << "Failed to receive startup packet containing client ID." << std::endl;
         return EXIT_FAILURE;
     }
 
-    int32_t stub = -1;
-    startupPacket >> stub;
-    // startupPacket >> clientID;
-    std::cout << "Client id: " << stub << std::endl;
+    startupPacket >> clientID;
+    std::println("Client id: {}", clientID);
     
     std::ifstream telemetryFile = std::ifstream(TELEMETRY_FILE);
     if (!telemetryFile.is_open()) {
-        std::cout << "Failed to open file: " << TELEMETRY_FILE << std::endl;
+        std::println("Failed to open file: {}", TELEMETRY_FILE);
         return EXIT_FAILURE;
     }
 
