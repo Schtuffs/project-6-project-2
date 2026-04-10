@@ -151,6 +151,8 @@ Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
         delete[] buf;
         return packet;
     }
+
+    std::println(stderr, "ERROR: Failed to receive on invalid packet type.");
     return Packet();
 }
 

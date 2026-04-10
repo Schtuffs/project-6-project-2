@@ -13,12 +13,16 @@ typedef struct PLANE_PACKET {
     int32_t id;
     DateTime time;
     float fuel;
-    int32_t requestID;
+
+    friend Packet& operator>>(Packet& packet, PLANE_PACKET& plane) {
+        packet >> plane.type >> plane.id >> plane.time >> plane.fuel;
+        return packet;
+    }
 } PLANE_PACKET;
 
 Packet generateId() {
     Packet packet;
-    packet << 12;
+    packet << (rand() & INT32_MAX);
     return packet;
 }
 
@@ -30,12 +34,11 @@ int main(void) {
     }
 
     server.addReceive([&](CLIENT client, Packet packet) {
-        int32_t intType;
-        packet >> intType;
-        PACKET_TYPE type = static_cast<PACKET_TYPE>(intType);
+        PLANE_PACKET plane;
+        packet >> plane;
 
         // Determine what to do with packet type
-        switch (type) {
+        switch (static_cast<PACKET_TYPE>(plane.type)) {
             case PACKET_TYPE::ID: {
                 std::println("ID");
                 Packet p = generateId();

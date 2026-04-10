@@ -160,7 +160,17 @@ Packet& Packet::operator<<(const std::string& val) {
 
 Packet& Packet::pop(void* data, uint64_t size) {
     if (!data) {
-        std::println(stderr, "ERROR: Packet could not pop to null");
+        std::println(stderr, "ERROR: Packet could not pop to null.");
+        return *this;
+    }
+
+    if (!m_buffer) {
+        std::println(stderr, "ERROR: Packet could not pop from null.");
+        return *this;
+    }
+
+    if (!m_readPointer + size > m_size) {
+        std::println(stderr, "ERROR: Packet reading more data than it contains.");
         return *this;
     }
 
