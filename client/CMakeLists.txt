@@ -16,6 +16,7 @@ add_library(SOCKET_LIB SHARED
 
 add_executable(${PROJECT_NAME}
     ${SRC}/main.cpp
+    ${SRC}/DateTime.cpp
 )
 
 target_include_directories(SOCKET_LIB PUBLIC ${INCLUDE})
@@ -35,3 +36,8 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
     target_compile_options(SOCKET_LIB PRIVATE -Wall -Wextra -Werror -Wpedantic)
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror -Wpedantic)
 endif()
+
+add_executable(StubServer 
+    ${SRC}/server_stub.cpp
+)
+target_link_libraries(StubServer PRIVATE SOCKET_LIB)

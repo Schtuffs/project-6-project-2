@@ -13,6 +13,11 @@
 
 #define TELEMETRY_FILE "../resources/katl-kefd-B737-700.txt"
 
+enum class PacketType {
+    ID,
+    Text
+};
+
 int main(void) {
     int32_t clientID = -1;
 
@@ -22,14 +27,23 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    Packet idPacket;
+    idPacket << (int32_t)PacketType::ID;
+    std::cout << "Packet validity: " << idPacket.isValid() << std::endl;
+    clientSocket.send(idPacket);
+
     Packet startupPacket = clientSocket.receive(0, sizeof(int32_t));
     if (!startupPacket.isValid()) {
         std::cout << "Failed to receive startup packet containing client ID." << std::endl;
         return EXIT_FAILURE;
     }
 
+    std::cout << "Received packet size: " << startupPacket.size() << std::endl;
     startupPacket >> clientID;
+    std::cout << "Client id: " << clientID << std::endl;
 
+    return 1;
+    
     std::ifstream telemetryFile = std::ifstream(TELEMETRY_FILE);
     if (!telemetryFile.is_open()) {
         std::cout << "Failed to open file: " << TELEMETRY_FILE << std::endl;
@@ -48,7 +62,7 @@ int main(void) {
         DateTime dateTime = DateTime(telemetry.back());
         
         Packet packet = Packet(sizeof(int32_t) + sizeof(DateTime));
-        packet << dateTime << remainingFuel;
+        packet << (int32_t)PacketType::Text << dateTime << remainingFuel;
 
         clientSocket.send(packet);
     }
