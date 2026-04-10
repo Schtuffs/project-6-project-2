@@ -67,9 +67,9 @@ int main(void) {
         Packet packet = Packet(packetSize);
         packet << (int32_t)PacketType::Text << clientID << dateTime << remainingFuel;
         clientSocket.send(packet);
-        std::this_thread::sleep_for(1ms);
     }
 
+    std::this_thread::sleep_for(1s);
     return 0;
 }
 
