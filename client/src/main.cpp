@@ -48,6 +48,7 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
+    uint64_t packetSize = sizeof(int32_t) + sizeof(float) + sizeof(DateTime);
     std::string line = "";
     while (std::getline(telemetryFile, line)) {
         std::vector<std::string> telemetry = std::vector<std::string>();
@@ -59,7 +60,7 @@ int main(void) {
         
         DateTime dateTime = DateTime(telemetry.back());
         
-        Packet packet = Packet(sizeof(int32_t) + sizeof(float) + sizeof(DateTime));
+        Packet packet = Packet(packetSize);
         packet << (int32_t)PacketType::Text << dateTime << remainingFuel;
 
         clientSocket.send(packet);
