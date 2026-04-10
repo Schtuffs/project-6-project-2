@@ -17,11 +17,15 @@ int main(void) {
     int32_t clientID = -1;
 
     ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP);
+    if (!clientSocket.isSetup()) {
+        std::cout << "Socket not setup unfortunately" << std::endl;
+        return EXIT_FAILURE;
+    }
 
     Packet startupPacket = clientSocket.receive(0, sizeof(int32_t));
     if (!startupPacket.isValid()) {
         std::cout << "Failed to receive startup packet containing client ID." << std::endl;
-        //return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
 
     startupPacket >> clientID;
