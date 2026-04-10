@@ -39,5 +39,7 @@ endif()
 
 add_executable(StubServer 
     ${SRC}/server_stub.cpp
+    ${SRC}/DateTime.cpp
 )
+target_include_directories(StubServer PRIVATE ${INCLUDE})
 target_link_libraries(StubServer PRIVATE SOCKET_LIB)

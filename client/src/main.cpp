@@ -21,15 +21,14 @@ enum class PacketType {
 int main(void) {
     int32_t clientID = -1;
 
-    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP);
+    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP, "10.144.115.247");
     if (!clientSocket.isSetup()) {
         std::cout << "Socket not setup unfortunately" << std::endl;
         return EXIT_FAILURE;
     }
 
-    Packet idPacket;
+    Packet idPacket(sizeof(int32_t));
     idPacket << (int32_t)PacketType::ID;
-    std::cout << "Packet validity: " << idPacket.isValid() << std::endl;
     clientSocket.send(idPacket);
 
     Packet startupPacket = clientSocket.receive(0, sizeof(int32_t));
@@ -38,11 +37,10 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "Received packet size: " << startupPacket.size() << std::endl;
+    int stub = -1;
+    startupPacket >> stub;
     startupPacket >> clientID;
     std::cout << "Client id: " << clientID << std::endl;
-
-    return 1;
     
     std::ifstream telemetryFile = std::ifstream(TELEMETRY_FILE);
     if (!telemetryFile.is_open()) {
@@ -61,7 +59,7 @@ int main(void) {
         
         DateTime dateTime = DateTime(telemetry.back());
         
-        Packet packet = Packet(sizeof(int32_t) + sizeof(DateTime));
+        Packet packet = Packet(sizeof(int32_t) + sizeof(float) + sizeof(DateTime));
         packet << (int32_t)PacketType::Text << dateTime << remainingFuel;
 
         clientSocket.send(packet);
