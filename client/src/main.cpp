@@ -16,7 +16,7 @@
 int main(void) {
     int32_t clientID = -1;
 
-    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::UDP);
+    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP);
 
     Packet startupPacket = clientSocket.receive(0, sizeof(int32_t));
     if (!startupPacket.isValid()) {
