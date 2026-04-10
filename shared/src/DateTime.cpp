@@ -3,8 +3,17 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>
 
+DateTime::DateTime() {
+    this->month = 0;
+    this->day = 0;
+    this->year = 0;
+    this->hour = 0;
+    this->minute = 0;
+    this->second = 0;
+}
+
 DateTime::DateTime(int32_t month, int32_t day, int32_t year, int32_t hour, int32_t minute, int32_t second) {
-    this-> month = month;
+    this->month = month;
     this->day = day;
     this->year = year;
     this->hour = hour;
@@ -51,6 +60,11 @@ int32_t DateTime::GetMinute() const {
 
 int32_t DateTime::GetSecond() const {
     return second;
+}
+
+std::ostream& operator <<(std::ostream& cout, DateTime& dateTime) {
+    cout << dateTime.month << "-" << dateTime.day << "-" << dateTime.year << " " << dateTime.hour << ":" << dateTime.minute << ":" << dateTime.second;
+    return cout;
 }
 
 Packet& operator <<(Packet& packet, DateTime& dateTime) {
