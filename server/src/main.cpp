@@ -1,11 +1,26 @@
 #include <print>
 
 #include "sockets/Sockets.h"
+#include "DateTime.h"
 
 enum class PACKET_TYPE {
     ID,
     TEXT,
 };
+
+typedef struct PLANE_PACKET {
+    int32_t type;
+    int32_t id;
+    DateTime time;
+    float fuel;
+    int32_t requestID;
+} PLANE_PACKET;
+
+Packet generateId() {
+    Packet packet;
+    packet << 12;
+    return packet;
+}
 
 int main(void) {
     ServerSocket server(CONNECTION_TYPE::TCP);
@@ -23,23 +38,22 @@ int main(void) {
         switch (type) {
             case PACKET_TYPE::ID: {
                 std::println("ID");
-                Packet p(1);
-                p << (int32_t)10;
-                server.send(client, packet);
+                Packet p = generateId();
+                server.send(client, p);
                 break;
             }
             case PACKET_TYPE::TEXT: {
                 std::println("TEXT");
-                Packet p(1);
+                Packet p;
                 p << (int32_t)20;
-                server.send(client, packet);
+                server.send(client, p);
                 break;
             }
             default: {
                 std::println("UNKNOWN");
-                Packet p(1);
+                Packet p;
                 p << (int32_t)30;
-                server.send(client, packet);
+                server.send(client, p);
                 break;
             }
         }

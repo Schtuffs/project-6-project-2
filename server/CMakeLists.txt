@@ -3,20 +3,22 @@ project(server CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(SRC ${CMAKE_CURRENT_LIST_DIR}/src)
-set(SOCKET ${SRC}/sockets)
+set(SOCKET src/sockets)
+set(SHARE ${CMAKE_CURRENT_LIST_DIR}/../shared)
 set(INCLUDE ${CMAKE_CURRENT_LIST_DIR}/include)
 set(LIB ${CMAKE_CURRENT_LIST_DIR}/lib)
   
 add_executable(${PROJECT_NAME}
-    ${SOCKET}/ClientSocket.cpp
-    ${SOCKET}/Packet.cpp
-    ${SOCKET}/ServerSocket.cpp
-    ${SOCKET}/Socket.cpp
+    ${SHARE}/${SOCKET}/ClientSocket.cpp
+    ${SHARE}/${SOCKET}/Packet.cpp
+    ${SHARE}/${SOCKET}/ServerSocket.cpp
+    ${SHARE}/${SOCKET}/Socket.cpp
+    ${SHARE}/src/DateTime.cpp
     ${SRC}/main.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE})
-if (WIN32)
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE} ${SHARE}/include)
+if (WIN32 OR MSYS)
   target_link_libraries(${PROJECT_NAME} PRIVATE Ws2_32)
 endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE stdc++exp)
