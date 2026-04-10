@@ -1,3 +1,4 @@
+#include <map>
 #include <print>
 
 #include "sockets/Sockets.h"
@@ -20,9 +21,12 @@ typedef struct PLANE_PACKET {
     }
 } PLANE_PACKET;
 
-Packet generateId() {
+std::map<int32_t, float> fuelValues;
+
+Packet generateId(PLANE_PACKET& plane) {
     Packet packet;
-    packet << (rand() & INT32_MAX);
+    std::println("ID: {}", plane.id);
+    packet << (int32_t)plane.id;
     return packet;
 }
 
@@ -41,15 +45,12 @@ int main(void) {
         switch (static_cast<PACKET_TYPE>(plane.type)) {
             case PACKET_TYPE::ID: {
                 std::println("ID");
-                Packet p = generateId();
+                Packet p = generateId(plane);
                 server.send(client, p);
                 break;
             }
             case PACKET_TYPE::TEXT: {
-                std::println("TEXT");
-                Packet p;
-                p << (int32_t)20;
-                server.send(client, p);
+
                 break;
             }
             default: {

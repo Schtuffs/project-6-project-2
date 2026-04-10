@@ -169,7 +169,7 @@ Packet& Packet::pop(void* data, uint64_t size) {
         return *this;
     }
 
-    if (!m_readPointer + size > m_size) {
+    if (m_readPointer + size > m_size) {
         std::println(stderr, "ERROR: Packet reading more data than it contains.");
         return *this;
     }
