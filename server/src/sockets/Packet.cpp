@@ -62,13 +62,15 @@ bool Packet::isValid() const noexcept {
 // ----- Update -----
 
 bool Packet::reallocate() {
+    // Create valid allocation for invalid packet
     if (m_buffer == nullptr) {
-        std::println(stderr, "PACKET ERROR: cannot reallocate on invalid packet");
-        return false;
+        m_size = 1;
+        m_buffer = new BUFFER[m_size];
+        return true;
     }
     
     // Prepare new allocation space
-    uint64_t newSize = std::ceil(this->size() * 1.5);
+    uint64_t newSize = std::ceil((m_size * 1.5) + 1);
     BUFFER* newBuf = new BUFFER[newSize];
     if (!newBuf) {
         std::println(stderr, "PACKET ERROR: failed to allocate a larger buffer");
@@ -79,6 +81,7 @@ bool Packet::reallocate() {
     std::memcpy(newBuf, m_buffer, m_writePointer);
     delete[] m_buffer;
     m_buffer = newBuf;
+    m_size = newSize;
     return true;
 }
 
@@ -87,11 +90,14 @@ bool Packet::reallocate() {
 // ----- INSERTIONS -----
 
 Packet& Packet::push(const void* data, uint64_t size) {
+    // Revalidate invalid packet
     if (m_buffer == nullptr) {
-        std::println(stderr, "PACKET ERROR: cannot reallocate on invalid packet");
-        return *this;
+        if (!reallocate()) {
+            return *this;
+        }
     }
-    
+
+    // Get enough size for packet data
     while (m_writePointer + size > m_size) {
         if (!reallocate()) {
             return *this;

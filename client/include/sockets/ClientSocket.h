@@ -14,8 +14,8 @@ public:
 
     /**
      * @brief Creates a specified client.
-     * @param cType The <code>CONNECTION_TYPE</code> to use.
-     * @param ip The IP of the server to connect to.
+     * @param cType The `CONNECTION_TYPE` to use.
+     * @param ip The IP of the server to connect to in xxx.xxx.xxx.xxx format.
      * @param port The port of the server to connect to.
      * @author Kyle Wagler
      * @date 2026-03-20
@@ -28,7 +28,23 @@ public:
      */
     ~ClientSocket();
 
+    /**
+     * @brief Sends a packet to the server.
+     * @param packet The `Packet` to send to the server.
+     * @return `true` on successful send, `false` on failure to send
+     * @author Kyle Wagler
+     * @date 2026-04-09
+     */
     bool send(const Packet& packet);
+    
+    /**
+     * @brief Receives a packet from the server.
+     * @param millis The time in milliseconds to check for `Packet`'s received. 0 for a non-blocking call.
+     * @param maxSize The maximum size for a UDP packet. Not necessary for TCP.
+     * @return The `Packet` data from the server. Returns an invalid `Packet` on failure.
+     * @author Kyle Wagler
+     * @date 2026-04-09
+     */
     Packet receive(int millis = 0, int maxSize = MAX_BUF_SIZE);
 
 private:

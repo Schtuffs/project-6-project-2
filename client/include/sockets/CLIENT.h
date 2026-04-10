@@ -20,9 +20,17 @@
 
 #include <cstdint>
 
+/**
+ * @brief Holds information for sending packets back after receiving.
+ * @author Kyle Wagler
+ * @date 2026-04-09
+ */
 typedef struct CLIENT {
+    /** The socket for the connection. */
     SOCKET socket;
+    /** The IP for the connection. */
     in_addr ip;
+    /** The port for the connection. */
     uint16_t port;
 } CLIENT;
 

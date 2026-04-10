@@ -58,6 +58,36 @@ bool Socket::poll(SOCKET socket, int millis) {
     return (::POLL(fds, 1, millis) > 0);
 }
 
+bool Socket::send(const Packet& packet, CLIENT& client) const noexcept {
+    if (mType == CONNECTION_TYPE::TCP) {
+        // Prepare buffer sized
+        uint64_t size = packet.size();
+        Packet::BUFFER* buffer = new Packet::BUFFER[size + sizeof(size)];
+        
+        // Copy datapoints into buffer
+        std::memcpy(buffer, &size, sizeof(size));
+        std::memcpy(buffer + sizeof(size), packet.data(), packet.size());
+
+        // Add lengths
+        int returnCode = ::send(client.socket, buffer, size + sizeof(size), 0);
+        delete[] buffer;
+        return returnCode != SOCKET_ERROR;
+    }
+    else if (mType == CONNECTION_TYPE::UDP) {
+        // define correct variable type for sender address length
+        sockaddr_in addr;
+        const auto addrLen = sizeof(addr);
+        
+        // Setup the address
+        addr.sin_family = AF_INET;
+        addr.sin_port = client.port;
+        addr.sin_addr = client.ip;
+
+        return (::sendto(client.socket, packet.data(), packet.size(), 0, (sockaddr*)&addr, addrLen) != SOCKET_ERROR);
+    }
+    return false;
+}
+
 Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
     // Check if receive possible
     if (!this->poll(client.socket, millis)) {
@@ -122,35 +152,5 @@ Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
         return packet;
     }
     return Packet();
-}
-
-bool Socket::send(const Packet& packet, CLIENT& client) const noexcept {
-    if (mType == CONNECTION_TYPE::TCP) {
-        // Prepare buffer sized
-        uint64_t size = packet.size();
-        Packet::BUFFER* buffer = new Packet::BUFFER[size + sizeof(size)];
-
-        // Copy datapoints into buffer
-        std::memcpy(buffer, &size, sizeof(size));
-        std::memcpy(buffer + sizeof(size), packet.data(), packet.size());
-
-        // Add lengths
-        int returnCode = ::send(client.socket, buffer, size + sizeof(size), 0);
-        delete[] buffer;
-        return returnCode != SOCKET_ERROR;
-    }
-    else if (mType == CONNECTION_TYPE::UDP) {
-        // define correct variable type for sender address length
-        sockaddr_in addr;
-        const auto addrLen = sizeof(addr);
-        
-        // Setup the address
-        addr.sin_family = AF_INET;
-        addr.sin_port = client.port;
-        addr.sin_addr = client.ip;
-
-        return (::sendto(client.socket, packet.data(), packet.size(), 0, (sockaddr*)&addr, addrLen) != SOCKET_ERROR);
-    }
-    return false;
 }
 
