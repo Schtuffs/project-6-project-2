@@ -43,5 +43,6 @@
 # Other
 build/
 winbuild/
+server/resources/
 .cache
 .vscode

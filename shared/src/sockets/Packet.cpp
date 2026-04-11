@@ -221,7 +221,7 @@ Packet& Packet::operator>>(double& val) {
 
 Packet& Packet::operator>>(std::string& val) {
     val = "";
-    int8_t c;
+    int8_t c = 0;
 
     do {
         pop(&c, sizeof(c));

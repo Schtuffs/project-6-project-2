@@ -1,3 +1,4 @@
+#include <fstream>
 #include <map>
 #include <print>
 
@@ -23,11 +24,26 @@ typedef struct PLANE_PACKET {
 
 std::map<int32_t, float> fuelValues;
 
-Packet generateId(PLANE_PACKET& plane) {
+Packet generateId() {
+    srand(time(nullptr));
     Packet packet;
-    std::println("ID: {}", plane.id);
-    packet << (int32_t)plane.id;
+    int32_t id = rand() & INT32_MAX;
+    packet << id;
     return packet;
+}
+
+void calculateFuel(PLANE_PACKET& plane) {
+    float prev = fuelValues[plane.id];
+    float delta = prev - plane.fuel;
+    fuelValues[plane.id] = plane.fuel;
+
+    constexpr const char* location = "../resources/";
+    constexpr const char* extension = ".csv";
+    std::ofstream file(location + std::to_string(plane.id) + extension, std::ios::app);
+    if (file.is_open()) {
+        file << delta << "\n";
+        file.close();
+    }
 }
 
 int main(void) {
@@ -44,13 +60,12 @@ int main(void) {
         // Determine what to do with packet type
         switch (static_cast<PACKET_TYPE>(plane.type)) {
             case PACKET_TYPE::ID: {
-                std::println("ID");
-                Packet p = generateId(plane);
+                Packet p = generateId();
                 server.send(client, p);
                 break;
             }
             case PACKET_TYPE::TEXT: {
-
+                calculateFuel(plane);
                 break;
             }
             default: {
