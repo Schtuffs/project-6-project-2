@@ -7,9 +7,9 @@
 #include <boost/asio/thread_pool.hpp>
 #endif
 
-#include <sockets/CLIENT.h>
-#include <sockets/Packet.h>
-#include <sockets/Socket.h>
+#include <CLIENT.h>
+#include <Packet.h>
+#include <Socket.h>
 
 /**
  * @class ServerSocket

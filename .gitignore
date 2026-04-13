@@ -41,6 +41,11 @@
 *.dwo
 
 # Other
+.vs
+x86
+x64
+server-old
+client-old
 build/
 winbuild/
 server/resources/

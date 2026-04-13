@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sockets/Socket.h>
+#include <Socket.h>
 
 /**
  * @class ClientSocket

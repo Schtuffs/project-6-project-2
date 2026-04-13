@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include <sockets/CLIENT.h>
-#include <sockets/Packet.h>
+#include <CLIENT.h>
+#include <Packet.h>
 
 enum class CONNECTION_TYPE  { TCP, UDP };
 constexpr const char* SOCKETS_VERSION   = "3.0.0";

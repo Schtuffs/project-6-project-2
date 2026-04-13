@@ -5,8 +5,6 @@
 #include <iostream>
 #include <string>
 
-#include <sockets/Array.h>
-
 /**
  * @class Packet
  * @brief The default packet class.
