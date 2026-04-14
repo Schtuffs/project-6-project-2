@@ -1,7 +1,25 @@
 #include <sockets/Packet.h>
 
+#ifdef _WIN32
+    #include <winsock2.h>
+#else
+    #include <arpa/inet.h>
+#endif
+
+#include <array>
+#include <cmath>
 #include <cstring>
 #include <print>
+
+template <typename IntegerType, typename... Bytes>
+[[nodiscard]] constexpr IntegerType toInteger(Bytes... byte)
+{
+    static_assert(sizeof(IntegerType) >= sizeof...(Bytes), "IntegerType not large enough to contain bytes");
+
+    IntegerType integer = 0;
+    std::size_t index   = 0;
+    return ((integer |= static_cast<IntegerType>(static_cast<IntegerType>(byte) << 8 * index++)), ...);
+}
 
 // ----- Creation ----- Destruction -----
 
@@ -119,27 +137,51 @@ Packet& Packet::operator<<(uint8_t val) {
 }
 
 Packet& Packet::operator<<(int16_t val) {
+    val = static_cast<int16_t>(htons(static_cast<uint16_t>(val)));
     return push(&val, sizeof(val));
 }
 
 Packet& Packet::operator<<(uint16_t val) {
+    val = htons(val);
     return push(&val, sizeof(val));
 }
 
 Packet& Packet::operator<<(int32_t val) {
+    val = static_cast<int32_t>(htonl(static_cast<uint32_t>(val)));
     return push(&val, sizeof(val));
 }
 
 Packet& Packet::operator<<(uint32_t val) {
+    val = htonl(val);
     return push(&val, sizeof(val));
 }
 
 Packet& Packet::operator<<(int64_t val) {
-    return push(&val, sizeof(val));
+    // Taken from SFML
+    const std::array toWrite = {static_cast<std::uint8_t>((val >> 56) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 48) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 40) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 32) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 24) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 16) & 0xFF),
+                                static_cast<std::uint8_t>((val >>  8) & 0xFF),
+                                static_cast<std::uint8_t>((val)       & 0xFF)};
+
+    return push(toWrite.data(), toWrite.size());
 }
 
 Packet& Packet::operator<<(uint64_t val) {
-    return push(&val, sizeof(val));
+    // Taken from SFML
+    const std::array toWrite = {static_cast<std::uint8_t>((val >> 56) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 48) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 40) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 32) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 24) & 0xFF),
+                                static_cast<std::uint8_t>((val >> 16) & 0xFF),
+                                static_cast<std::uint8_t>((val >>  8) & 0xFF),
+                                static_cast<std::uint8_t>((val)       & 0xFF)};
+
+    return push(toWrite.data(), toWrite.size());
 }
 
 Packet& Packet::operator<<(float val) {
@@ -188,27 +230,43 @@ Packet& Packet::operator>>(uint8_t& val) {
 }
 
 Packet& Packet::operator>>(int16_t& val) {
-    return pop(&val, sizeof(val));
+    pop(&val, sizeof(val));
+    val = static_cast<int16_t>(ntohs(static_cast<uint16_t>(val)));
+    return *this;
 }
 
 Packet& Packet::operator>>(uint16_t& val) {
-    return pop(&val, sizeof(val));
+    pop(&val, sizeof(val));
+    val = ntohs(val);
+    return *this;
 }
 
 Packet& Packet::operator>>(int32_t& val) {
-    return pop(&val, sizeof(val));
+    pop(&val, sizeof(val));
+    val = static_cast<int32_t>(ntohs(static_cast<uint32_t>(val)));
+    return *this;
 }
 
 Packet& Packet::operator>>(uint32_t& val) {
-    return pop(&val, sizeof(val));
+    pop(&val, sizeof(val));
+    val = ntohl(val);
+    return *this;
 }
 
 Packet& Packet::operator>>(int64_t& val) {
-    return pop(&val, sizeof(val));
+    std::array<std::byte, sizeof(val)> bytes{};
+    pop(bytes.data(), bytes.size());
+    
+    val = toInteger<int64_t>(bytes[7], bytes[6], bytes[5], bytes[4], bytes[3], bytes[2], bytes[1], bytes[0]);
+    return *this;
 }
 
 Packet& Packet::operator>>(uint64_t& val) {
-    return pop(&val, sizeof(val));
+    std::array<std::byte, sizeof(val)> bytes{};
+    pop(bytes.data(), bytes.size());
+
+    val = toInteger<uint64_t>(bytes[7], bytes[6], bytes[5], bytes[4], bytes[3], bytes[2], bytes[1], bytes[0]);
+    return *this;
 }
 
 Packet& Packet::operator>>(float& val) {

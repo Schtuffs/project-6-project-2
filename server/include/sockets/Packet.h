@@ -1,11 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <cmath>
-#include <iostream>
 #include <string>
-
-#include <sockets/Array.h>
 
 /**
  * @class Packet
@@ -77,7 +73,7 @@ public:
     bool isValid() const noexcept;
 
     // ----- Update -----
-    
+
     /**
      * @brief This function is used to add data into the packet.
      * @param data A pointer to the data.

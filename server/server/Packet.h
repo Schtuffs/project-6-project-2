@@ -1,13 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <cmath>
-#include <iostream>
 #include <string>
-
-#ifdef _WIN32
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#endif
 
 /**
  * @class Packet
