@@ -18,21 +18,28 @@ enum class PacketType {
     Text
 };
 
-int main(void) {
+int main(int argc, char** argv) {
     int32_t clientID = -1;
 
-    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP, "10.144.115.247");
-    if (!clientSocket.isSetup()) {
+    ClientSocket* clientSocket = nullptr;
+    if (argc >= 2) {
+        clientSocket = new ClientSocket(CONNECTION_TYPE::TCP, argv[1]);
+    }
+    else {
+        clientSocket = new ClientSocket(CONNECTION_TYPE::TCP);
+    }
+    if (!clientSocket->isSetup()) {
         return EXIT_FAILURE;
     }
 
     Packet idPacket;
     DateTime d;
     idPacket << (int32_t)PacketType::ID << 3 << d << 1.3f;
-    clientSocket.send(idPacket);
+    clientSocket->send(idPacket);
 
-    Packet startupPacket = clientSocket.receive(200);
+    Packet startupPacket = clientSocket->receive(200);
     if (!startupPacket.isValid()) {
+        std::println(stderr, "ERROR: Failed to receive valid id.");
         return EXIT_FAILURE;
     }
 
@@ -66,10 +73,11 @@ int main(void) {
 
         Packet packet = Packet(packetSize);
         packet << (int32_t)PacketType::Text << clientID << dateTime << remainingFuel;
-        clientSocket.send(packet);
+        clientSocket->send(packet);
     }
 
     std::this_thread::sleep_for(1s);
+    delete clientSocket;
     return 0;
 }
 

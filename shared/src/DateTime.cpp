@@ -2,6 +2,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <iostream>
 
 DateTime::DateTime() {
     this->month = 0;

@@ -1,11 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <cmath>
-#include <iostream>
 #include <string>
-
-#include <sockets/Array.h>
 
 /**
  * @class Packet

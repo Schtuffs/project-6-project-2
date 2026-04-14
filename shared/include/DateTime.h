@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include "sockets/Packet.h"
+#include <cstdint>
 #include <string>
 #include <ostream>
 
