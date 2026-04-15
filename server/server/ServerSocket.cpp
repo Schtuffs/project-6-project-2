@@ -202,6 +202,7 @@ void ServerSocket::detach(uint64_t threads) {
 }
 
 void ServerSocket::serverLoop() {
+    m_isRunning = true;
     std::print("Server running on thread {}\n", std::this_thread::get_id());
     
     // Main loop
