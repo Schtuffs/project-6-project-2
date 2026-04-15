@@ -55,21 +55,27 @@ bool Socket::poll(SOCKET socket, int millis) {
     pollfd fds[1];
     fds[0].fd = socket;
     fds[0].events = POLLIN;
+#ifdef _WIN32
     return (::POLL(fds, 1, millis) > 0);
+#else
+    int pollValue = ::POLL(fds, 1, millis);
+    return (pollValue & POLLIN);
+#endif
 }
 
 bool Socket::send(const Packet& packet, CLIENT& client) const noexcept {
     if (mType == CONNECTION_TYPE::TCP) {
         // Prepare buffer sized
-        uint64_t size = packet.size();
-        Packet::BUFFER* buffer = new Packet::BUFFER[size + sizeof(size)];
-        
+        uint32_t size = static_cast<uint32_t>(packet.size());
+        uint32_t sendSize = htonl(size);
+        Packet::BUFFER* buffer = new Packet::BUFFER[size + sizeof(sendSize)];
+
         // Copy datapoints into buffer
-        std::memcpy(buffer, &size, sizeof(size));
-        std::memcpy(buffer + sizeof(size), packet.data(), packet.size());
+        std::memcpy(buffer, &sendSize, sizeof(sendSize));
+        std::memcpy(buffer + sizeof(sendSize), packet.data(), packet.size());
 
         // Add lengths
-        int returnCode = ::send(client.socket, buffer, size + sizeof(size), 0);
+        int returnCode = ::send(client.socket, buffer, size + sizeof(sendSize), 0);
         delete[] buffer;
         return returnCode != SOCKET_ERROR;
     }
@@ -95,6 +101,42 @@ Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
     }
     
     // Receive the head first
+    if (mType == CONNECTION_TYPE::TCP) {
+        // Read size byte
+        uint32_t size = 0;
+        Packet::BUFFER sizeBuf[sizeof(size)];
+        int received = ::recv(client.socket, sizeBuf, sizeof(size), 0);
+        if (received != (static_cast<int>(sizeof(size)))) {
+            std::println("ERROR: failed to receive data from socket.");
+            return Packet();
+        }
+        std::memcpy(&size, sizeBuf, sizeof(size));
+        size = ntohl(size);
+        
+        // Read until size satisfied
+        uint64_t total = 0;
+        Packet::BUFFER* buf = new Packet::BUFFER[size];
+        Packet::BUFFER* data = new Packet::BUFFER[size];
+        while (total != size) {
+            int received = ::recv(client.socket, buf, size - total, 0);
+            if (received <= 0) {
+                if (received < 0) {
+                    std::println("ERROR: Failed to receive data from socket");
+                }
+                delete[] data;
+                delete[] buf;
+                return Packet();
+            }
+            std::memcpy(data + total, buf, received);
+            total += received;
+        }
+
+        Packet packet(data, size);
+        delete[] data;
+        delete[] buf;
+        return packet;
+    }
+    
     if (mType == CONNECTION_TYPE::UDP) {
         sockaddr_in udpClient;
         socklen_t length = sizeof(mUdpClient);
@@ -113,41 +155,6 @@ Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
         client.port = udpClient.sin_port;
         
         Packet packet(buf, received);
-        delete[] buf;
-        return packet;
-    }
-    
-    if (mType == CONNECTION_TYPE::TCP) {
-        // Read size byte
-        Packet::BUFFER* buf = new Packet::BUFFER[maxSize];
-        uint64_t size = 0;
-        int received = ::recv(client.socket, buf, sizeof(size), 0);
-        if (received != (static_cast<int>(sizeof(size)))) {
-            std::println("ERROR: failed to receive data from socket.");
-            delete[] buf;
-            return Packet();
-        }
-        
-        // Read the size
-        std::memcpy(&size, buf, sizeof(size));
-        
-        // Read until size satisfied
-        uint64_t total = 0;
-        Packet::BUFFER* data = new Packet::BUFFER[size];
-        while (total != size) {
-            int received = ::recv(client.socket, buf, size - total, 0);
-            if (received < 0) {
-                std::println("ERROR: Failed to receive data from socket");
-                delete[] data;
-                delete[] buf;
-                return Packet();
-            }
-            std::memcpy(data + total, buf, received);
-            total += received;
-        }
-
-        Packet packet(data, size);
-        delete[] data;
         delete[] buf;
         return packet;
     }

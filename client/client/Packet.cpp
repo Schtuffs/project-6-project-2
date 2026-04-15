@@ -243,7 +243,7 @@ Packet& Packet::operator>>(uint16_t& val) {
 
 Packet& Packet::operator>>(int32_t& val) {
     pop(&val, sizeof(val));
-    val = static_cast<int32_t>(ntohs(static_cast<uint32_t>(val)));
+    val = static_cast<int32_t>(ntohl(static_cast<uint32_t>(val)));
     return *this;
 }
 
