@@ -26,9 +26,8 @@ typedef struct PLANE_PACKET {
 std::map<int32_t, float> fuelValues;
 
 Packet generateId() {
-    srand(time(nullptr));
     Packet packet;
-    int32_t id = rand() & INT32_MAX;
+    int32_t id = std::this_thread::get_id()._Get_underlying_id();
     packet << id;
     return packet;
 }
