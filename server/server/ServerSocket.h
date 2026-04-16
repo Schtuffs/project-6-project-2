@@ -60,10 +60,19 @@ class ServerSocket : public Socket {
     
     /**
      * @brief Add a lambda for handling packets.
+     * @param function The lambda function to call on valid packet reception.
      * @author Kyle Wagler
      * @date 2026-03-20
      */
     void addReceive(std::function<void(CLIENT, Packet)> function);
+    
+    /**
+     * @brief Add a lambda for on client end.
+     * @param function The function to call on client end.
+     * @author Kyle Wagler
+     * @date 2026-04-16
+     */
+    void addClientClose(std::function<void(void)> function);
     
     /**
      * @brief Runs the server off the main thread and multithreads clients.
@@ -87,6 +96,7 @@ private:
     bool m_isRunning;
     std::thread m_serverThread;
     std::function<void(CLIENT, Packet)> m_packetLambda;
+    std::function<void(void)> m_clientLambda;
 #ifdef _SERVER_SOCKET_IMPL
     boost::asio::thread_pool* m_packetPool;
 #endif

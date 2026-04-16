@@ -107,7 +107,9 @@ Packet Socket::_receive(CLIENT& client, int millis, int maxSize) {
         Packet::BUFFER sizeBuf[sizeof(size)];
         int received = ::recv(client.socket, sizeBuf, sizeof(size), 0);
         if (received != (static_cast<int>(sizeof(size)))) {
-            std::println("ERROR: failed to receive data from socket.");
+            if (received < 0) {
+                std::println("ERROR: failed to receive data from socket.");
+            }
             return Packet();
         }
         std::memcpy(&size, sizeBuf, sizeof(size));

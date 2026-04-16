@@ -1,7 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <fstream>
 #include <map>
+#include <mutex>
 #include <print>
+#include <utility>
 
 #include "Sockets.h"
 #include "DateTime.h"
@@ -23,34 +25,43 @@ typedef struct PLANE_PACKET {
     }
 } PLANE_PACKET;
 
-std::map<int32_t, float> fuelValues;
+static std::map<int32_t, std::pair<float, FILE*>> fuelValues;
+static std::mutex mtx;
 
 Packet generateId() {
     Packet packet;
     int32_t id = std::this_thread::get_id()._Get_underlying_id();
     packet << id;
+
+    mtx.lock();
+    fuelValues[id].first = 0;
+    fuelValues[id].second = nullptr;
+    mtx.unlock();
+
     return packet;
 }
 
 void calculateFuel(PLANE_PACKET& plane) {
-    float prev = fuelValues[plane.id];
+    auto& data = fuelValues[plane.id];
+    float prev = data.first;
     float delta = prev - plane.fuel;
-    fuelValues[plane.id] = plane.fuel;
+    data.first = plane.fuel;
 
-    constexpr const char* location = "../resources/";
-    constexpr const char* extension = ".csv";
-    std::string filename = location + std::to_string(plane.id) + extension;
-    //FILE* file = fopen(filename.c_str(), "w");
-    std::ofstream file(filename, std::ios::app);
-    if (file.is_open()) {
-        //std::println(file, "{}", delta);
-        file << delta << "\n";
-        file.close();
-        //fclose(file);
+    if (!data.second) {
+        constexpr const char* location = "../resources/";
+        constexpr const char* extension = ".csv";
+        std::string filename = location + std::to_string(plane.id) + extension;
+        FILE* file = fopen(filename.c_str(), "w");
+        if (file) {
+            data.second = file;
+        }
+        else {
+            std::println(stderr, "Failure: {}", location + std::to_string(plane.id) + extension);
+            return;
+        }
     }
-    else {
-        std::println(stderr, "Failure: {}", location + std::to_string(plane.id) + extension);
-    }
+
+    std::println(data.second, "{:.6}", delta);
 }
 
 int main(void) {
@@ -77,12 +88,17 @@ int main(void) {
             }
             default: {
                 std::println("UNKNOWN");
-                Packet p;
-                p << (int32_t)30;
-                server.send(client, p);
+                throw 1;
                 break;
             }
         }
+    });
+
+    server.addClientClose([]() {
+        fclose(fuelValues[std::this_thread::get_id()._Get_underlying_id()].second);
+        mtx.lock();
+        fuelValues.erase(std::this_thread::get_id()._Get_underlying_id());
+        mtx.unlock();
     });
 
     server.detach();

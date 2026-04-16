@@ -7,8 +7,6 @@
 
 #include "Packet.h"
 
-#pragma comment (lib, "Ws2_32")
-
 static bool s_isRunning = true;
 
 #ifdef _WIN32
@@ -190,6 +188,10 @@ void ServerSocket::addReceive(std::function<void(CLIENT, Packet)> function) {
     m_packetLambda = function;
 }
 
+void ServerSocket::addClientClose(std::function<void(void)> function) {
+    m_clientLambda = function;
+}
+
 void ServerSocket::detach(uint64_t threads) {
     if (threads == 0) {
         m_packetPool = new boost::asio::thread_pool(std::thread::hardware_concurrency());
@@ -226,6 +228,11 @@ void ServerSocket::clientLoop(SOCKET client) {
     }
     
     std::print("Client ending on thread {}\n", std::this_thread::get_id());
+    try {
+        m_clientLambda();
+    } catch (...) {
+        std::println(stderr, "ERROR: Client close lambda threw exception.");
+    }
     CLOSE(client);
 }
 
