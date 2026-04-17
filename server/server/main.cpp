@@ -25,6 +25,7 @@ typedef struct PLANE_PACKET {
     }
 } PLANE_PACKET;
 
+//static std::map<int32_t, std::pair<float, std::ofstream*>> fuelValues;
 static std::map<int32_t, std::pair<float, FILE*>> fuelValues;
 static std::mutex mtx;
 
@@ -32,6 +33,13 @@ Packet generateId() {
     Packet packet;
     int32_t id = std::this_thread::get_id()._Get_underlying_id();
     packet << id;
+    if (fuelValues.contains(id) || id < 100) {
+        std::println(stderr, "ERROR: ID already exists.");
+        Packet p(4);
+        p << (int32_t)(-1);
+        return Packet();
+    }
+
 
     mtx.lock();
     fuelValues[id].first = 0;
@@ -42,6 +50,11 @@ Packet generateId() {
 }
 
 void calculateFuel(PLANE_PACKET& plane) {
+    if (plane.id < 100) {
+        std::println("ERROR: ID BAD {}", plane.id);
+        throw 1;
+    }
+
     auto& data = fuelValues[plane.id];
     float prev = data.first;
     float delta = prev - plane.fuel;
@@ -51,6 +64,8 @@ void calculateFuel(PLANE_PACKET& plane) {
         constexpr const char* location = "../resources/";
         constexpr const char* extension = ".csv";
         std::string filename = location + std::to_string(plane.id) + extension;
+        //std::ofstream* file = new std::ofstream(filename);
+        //if (file->is_open()) {
         FILE* file = fopen(filename.c_str(), "w");
         if (file) {
             data.second = file;
@@ -61,6 +76,7 @@ void calculateFuel(PLANE_PACKET& plane) {
         }
     }
 
+    //*data.second << delta << "\n";
     std::println(data.second, "{:.6}", delta);
 }
 
@@ -95,9 +111,13 @@ int main(void) {
     });
 
     server.addClientClose([]() {
-        fclose(fuelValues[std::this_thread::get_id()._Get_underlying_id()].second);
+        //delete fuelValues[std::this_thread::get_id()._Get_underlying_id()].second;
+        if (fuelValues[std::this_thread::get_id()._Get_underlying_id()].second) {
+            fclose(fuelValues[std::this_thread::get_id()._Get_underlying_id()].second);
+        }
         mtx.lock();
         fuelValues.erase(std::this_thread::get_id()._Get_underlying_id());
+        std::println("Remaining: {}", fuelValues.size());
         mtx.unlock();
     });
 

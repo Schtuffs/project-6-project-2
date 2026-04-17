@@ -1,11 +1,14 @@
 #define _SERVER_SOCKET_IMPL
 #include "ServerSocket.h"
 
+#include <chrono>
 #include <print>
 
 #include <boost/asio/post.hpp>
 
 #include "Packet.h"
+
+using namespace std::chrono_literals;
 
 static bool s_isRunning = true;
 
@@ -205,6 +208,7 @@ void ServerSocket::detach(uint64_t threads) {
 
 void ServerSocket::serverLoop() {
     m_isRunning = true;
+    s_isRunning = true;
     std::print("Server running on thread {}\n", std::this_thread::get_id());
     
     // Main loop
@@ -219,8 +223,25 @@ void ServerSocket::serverLoop() {
 void ServerSocket::clientLoop(SOCKET client) {
     std::print("Client added on thread {}\n", std::this_thread::get_id());
     
+    DWORD timeout = 5000;
+    setsockopt(client, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+
+    auto prev = std::chrono::milliseconds(std::chrono::system_clock::now().time_since_epoch().count());
+
     // All threads are bound to main object lifetime or Ctrl+C
     while (s_isRunning && m_isRunning) {
+        auto current = std::chrono::milliseconds(std::chrono::system_clock::now().time_since_epoch().count());
+        if (current.count() - prev.count() > 1000) {
+            prev = current;
+            Packet p(10);
+            p << 1;
+            CLIENT c;
+            c.socket = client;
+            if (!Socket::send(p, c)) {
+                break;
+            }
+        }
+
         // Get messages until bad packet received
         if (receive(client, 100) == -1) {
             break;
