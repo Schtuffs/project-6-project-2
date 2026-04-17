@@ -18,10 +18,20 @@ enum class PacketType {
     Text
 };
 
+static bool run = true;
+
+void receive(ClientSocket& client) {
+    while (run) {
+        if (!client.receive(3000).isValid()) {
+            run = false;
+        }
+    }
+}
+
 int main(void) {
     int32_t clientID = -1;
 
-    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP);
+    ClientSocket clientSocket = ClientSocket(CONNECTION_TYPE::TCP, "10.233.241.171");
     if (!clientSocket.isSetup()) {
         return EXIT_FAILURE;
     }
@@ -31,13 +41,17 @@ int main(void) {
     idPacket << (int32_t)PacketType::ID << 3 << d << 1.3f;
     clientSocket.send(idPacket);
 
-    Packet startupPacket = clientSocket.receive(200);
+    Packet startupPacket = clientSocket.receive(1000);
     if (!startupPacket.isValid()) {
         return EXIT_FAILURE;
     }
 
     startupPacket >> clientID;
     std::println("Client id: {}", clientID);
+    if (clientID == -1) {
+        return 3;
+    }
+    std::thread(receive, std::ref(clientSocket)).detach();
     
     std::ifstream telemetryFile = std::ifstream(TELEMETRY_FILE);
     if (!telemetryFile.is_open()) {
@@ -47,8 +61,8 @@ int main(void) {
 
     uint64_t packetSize = sizeof(int32_t) * 3 + sizeof(DateTime);
     std::string line = "";
-    while (std::getline(telemetryFile, line)) {
-        std::println("{}", line);
+    while (std::getline(telemetryFile, line) && run) {
+        //std::println("{}", line);
 
         std::vector<std::string> telemetry = std::vector<std::string>();
         boost::trim_if(line, boost::is_any_of(" \n"));
@@ -66,7 +80,10 @@ int main(void) {
 
         Packet packet = Packet(packetSize);
         packet << (int32_t)PacketType::Text << clientID << dateTime << remainingFuel;
-        clientSocket.send(packet);
+        if (!clientSocket.send(packet)) {
+            run = false;
+        }
+        //std::this_thread::sleep_for(1ms);
     }
 
     std::this_thread::sleep_for(1s);
